@@ -1,0 +1,5 @@
+# Copia este archivo como application-local.properties (misma carpeta) y completa los valores.
+# application-local.properties esta en el .gitignore: NUNCA se sube al repo.
+
+# Debe ser IGUAL a jwt.secret del microservicio usuarios. Minimo 32 caracteres.
+jwt.secret=cambia-esto-por-una-clave-larga-de-al-menos-32-caracteres
