@@ -36,3 +36,5 @@ Cada servicio usa su propio puerto, definido en su `application.properties`.
 - `develop`: trabajo en curso; los cambios se integran aquí antes de pasar a `main`.
 
 Frontend: https://github.com/trembo25/web-veterinaria-react
+
+## contribuidor Gabriel
