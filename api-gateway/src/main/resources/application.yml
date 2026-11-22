@@ -1,0 +1,121 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # CORS: lo resuelve SOLO el gateway (los microservicios no lo ven, ver RemoveRequestHeader).
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+                allowedMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+                allowedHeaders: '*'
+                maxAge: 3600
+          default-filters:
+            # Sin cabecera Origin, los microservicios no aplican su propio CORS
+            # (evita respuestas duplicadas o rechazadas con 403 "Invalid CORS request").
+            - RemoveRequestHeader=Origin
+          routes:
+            - id: autenticacion
+              uri: lb://autenticacion
+              predicates:
+                - Path=/auth/**
+            - id: usuarios
+              uri: lb://usuarios
+              predicates:
+                - Path=/usuarios/**
+            - id: servicios
+              uri: lb://servicios
+              predicates:
+                - Path=/servicios/**
+            - id: citas
+              uri: lb://citas
+              predicates:
+                - Path=/citas/**
+            - id: pagos
+              uri: lb://pagos
+              predicates:
+                - Path=/api/pagos/**
+            - id: mensajeria
+              uri: lb://mensajeria
+              predicates:
+                - Path=/api/mensajes/**
+
+            # Documentacion OpenAPI de cada microservicio (alimenta el Swagger unificado del gateway).
+            - id: docs-autenticacion
+              uri: lb://autenticacion
+              predicates:
+                - Path=/docs/autenticacion/v3/api-docs
+              filters:
+                - RewritePath=/docs/autenticacion/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+            - id: docs-usuarios
+              uri: lb://usuarios
+              predicates:
+                - Path=/docs/usuarios/v3/api-docs
+              filters:
+                - RewritePath=/docs/usuarios/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+            - id: docs-servicios
+              uri: lb://servicios
+              predicates:
+                - Path=/docs/servicios/v3/api-docs
+              filters:
+                - RewritePath=/docs/servicios/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+            - id: docs-citas
+              uri: lb://citas
+              predicates:
+                - Path=/docs/citas/v3/api-docs
+              filters:
+                - RewritePath=/docs/citas/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+            - id: docs-pagos
+              uri: lb://pagos
+              predicates:
+                - Path=/docs/pagos/v3/api-docs
+              filters:
+                - RewritePath=/docs/pagos/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+            - id: docs-mensajeria
+              uri: lb://mensajeria
+              predicates:
+                - Path=/docs/mensajeria/v3/api-docs
+              filters:
+                - RewritePath=/docs/mensajeria/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: autenticacion
+        url: /docs/autenticacion/v3/api-docs
+      - name: usuarios
+        url: /docs/usuarios/v3/api-docs
+      - name: servicios
+        url: /docs/servicios/v3/api-docs
+      - name: citas
+        url: /docs/citas/v3/api-docs
+      - name: pagos
+        url: /docs/pagos/v3/api-docs
+      - name: mensajeria
+        url: /docs/mensajeria/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,gateway

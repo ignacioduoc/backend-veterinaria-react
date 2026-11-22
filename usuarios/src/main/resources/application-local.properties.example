@@ -1,0 +1,12 @@
+# Copia este archivo como application-local.properties (misma carpeta) y completa los valores.
+# application-local.properties esta en el .gitignore: NUNCA se sube al repo.
+
+spring.datasource.username=root
+spring.datasource.password=
+
+# Clave para verificar los JWT. Debe ser IGUAL a la del microservicio autenticacion.
+# Minimo 32 caracteres (256 bits) porque se firma con HS256.
+jwt.secret=cambia-esto-por-una-clave-larga-de-al-menos-32-caracteres
+
+# Contrasena del admin que se crea al arrancar (si no existe aun).
+admin.password=

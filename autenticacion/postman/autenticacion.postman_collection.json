@@ -1,0 +1,455 @@
+{
+  "info": {
+    "name": "Veterinaria San Marcos - Autenticación",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Pruebas del login (puerto 8086). Necesita usuarios (8081) levantado. Pon en adminPassword el valor de ADMIN_PASSWORD de usuarios. Ejecuta todo en orden con Run."
+  },
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "http://localhost:8086"
+    },
+    {
+      "key": "usuariosUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@sanmarcos.cl"
+    },
+    {
+      "key": "adminPassword",
+      "value": "PEGA_AQUI_TU_ADMIN_PASSWORD"
+    },
+    {
+      "key": "clientePassword",
+      "value": "Cliente123"
+    },
+    {
+      "key": "clienteEmail",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "emailMayus",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Preparar: registrar cliente en usuarios (201)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('clienteEmail', `login${Date.now()}@test.cl`);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{usuariosUrl}}/usuarios/registro",
+          "host": [
+            "{{usuariosUrl}}"
+          ],
+          "path": [
+            "usuarios",
+            "registro"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cliente Login\",\n  \"email\": \"{{clienteEmail}}\",\n  \"password\": \"{{clientePassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "1. Login correcto (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('Devuelve token, nombre, email y rol', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.rol).to.eql('cliente'); pm.expect(j.email).to.eql(pm.collectionVariables.get('clienteEmail')); });",
+              "pm.test('El token tiene sub = email y rol', () => { const datos = JSON.parse(require('atob')(j.token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); pm.expect(datos.sub).to.eql(j.email); pm.expect(datos.rol).to.eql('cliente'); pm.expect(datos.exp).to.be.above(datos.iat); });",
+              "pm.collectionVariables.set('token', j.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{authUrl}}/auth/login",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{clienteEmail}}\",\n  \"password\": \"{{clientePassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "2. Login con correo en mayúsculas (200)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// El servicio pasa el correo a minúsculas antes de validarlo.",
+              "pm.collectionVariables.set('emailMayus', pm.collectionVariables.get('clienteEmail').toUpperCase());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{authUrl}}/auth/login",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{emailMayus}}\",\n  \"password\": \"{{clientePassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "3. Login contraseña incorrecta (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{authUrl}}/auth/login",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{clienteEmail}}\",\n  \"password\": \"Incorrecta999\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "4. Login correo inexistente (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{authUrl}}/auth/login",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"nadie@test.cl\",\n  \"password\": \"Cualquiera1\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "5. Login datos inválidos (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+              "pm.test('Indica los campos', () => pm.expect(pm.response.json().campos).to.have.keys('email','password'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{authUrl}}/auth/login",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"malo\",\n  \"password\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "6. Admin login (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Rol admin', () => pm.expect(pm.response.json().rol).to.eql('admin'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{authUrl}}/auth/login",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "7. Usar el token en usuarios: ver mi cuenta (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{usuariosUrl}}/usuarios/{{clienteEmail}}",
+          "host": [
+            "{{usuariosUrl}}"
+          ],
+          "path": [
+            "usuarios",
+            "{{clienteEmail}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Usar el token de cliente en GET /usuarios (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{usuariosUrl}}/usuarios",
+          "host": [
+            "{{usuariosUrl}}"
+          ],
+          "path": [
+            "usuarios"
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. Swagger (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{authUrl}}/v3/api-docs",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "v3",
+            "api-docs"
+          ]
+        }
+      }
+    }
+  ]
+}
