@@ -53,9 +53,7 @@ cp .env.example .env      # completa MYSQL_ROOT_PASSWORD, JWT_SECRET y ADMIN_PAS
 docker compose up --build
 ```
 
-Cada microservicio con base de datos tiene **su propio contenedor MySQL y su propio volumen**
-(`mysql-usuarios` 3307, `mysql-servicios` 3308, `mysql-citas` 3309, `mysql-pagos` 3310,
-`mysql-mensajeria` 3311, expuestos solo en `127.0.0.1`).
+Cada microservicio con base de datos comparte el mismo puerto 3307 con diferentes bds independientes en su interior
 
 | Qué | URL |
 |---|---|
